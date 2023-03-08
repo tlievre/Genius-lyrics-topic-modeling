@@ -5,3 +5,5 @@ pyldavis
 scikit-learn
 spacy
 top2vec
+plotly
+jupyter

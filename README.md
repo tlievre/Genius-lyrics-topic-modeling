@@ -1,22 +1,30 @@
-# Latent Dirichlet Allocation
+# Genius lyrics toping modeling by decade
+
+
+## Content
+
+genius-lyrics-topics-modeling.ipynb (jupyter notebook run on Kaggle) based on Kaggle
+
+
+## Latent Dirichlet Allocation
 
 Latent Dirichlet Allocation summary based on this video explanation : https://www.youtube.com/watch?v=T05t-SqKArY
 
-## The problem
+### The problem
 
 We have collection of document and we want to sort them into groups.
 
-## How it works ?
+### How it works ?
 
 We can see LDA like a goup of machines that produce document. The machine parameters control the nature of the produced document. Then the output documents are compared to the original document and the algorithm is looking for the best machine (best settings) who produced the closest document. In this document we can find the topic.
 
-## Blueprint for the LDA machine
+### Blueprint for the LDA machine
 
 ![LDA machine blueprint](img/LDA_machine_blueprint.png)
 
 $\alpha$ and $\beta$ are [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution) and $\theta$ and $\phi$ are [multinomial distribution](https://en.wikipedia.org/wiki/Multinomial_distribution). $z$ and $w$ are respectively the topics and words.
 
-## Document probability
+### Document probability
 
 $P(W,Z,\theta,\phi;\alpha,\beta) = \prod_{j=1}^{M}P(\theta_j;\alpha)\prod_{i=1}^{K}P(\phi_i;\beta)\prod_{t=1}^{M}P(Z_{j,t}|\theta_j)P(W_{j,t}|\phi_{j,t})$
 
@@ -46,11 +54,13 @@ Let's draw a plan of the process in 4 steps :
 ![distribution schema](img/distribution_schema.png)
 
 
-# Gibbs sampling
+### Gibbs sampling
 
 In this part we focus on the words and we want to maximize the color of the documents (to fix).
 
 ## References
+
+- https://www.kaggle.com/datasets/carlosgdcj/genius-song-lyrics-with-language-information
 
 - https://www.youtube.com/watch?v=T05t-SqKArY
 

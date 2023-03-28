@@ -2,4 +2,4 @@ __pycache__/
 song_lyrics.csv
 data/
 models/
-
+.ipynb_checkpoints/

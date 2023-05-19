@@ -7,3 +7,4 @@ spacy
 top2vec
 plotly
 jupyter
+pyarrow

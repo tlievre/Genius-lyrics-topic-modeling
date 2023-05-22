@@ -3,4 +3,4 @@ song_lyrics.csv
 data/
 models/
 .ipynb_checkpoints/
-
+gensim.log

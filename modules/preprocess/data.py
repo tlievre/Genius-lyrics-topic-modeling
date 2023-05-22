@@ -19,19 +19,16 @@ def sample_data(df, balanced = True, prop = 0.1):
 
 
 def filter_data(df):
-
-    # Retrieve only the texts identified as English language by both cld3 and fasttext langid
-    df = df[df.language == 'en']
+    # filter values by date (1960 - 2022)
+    # and only the texts identified as English language by both cld3 and fasttext langid
+    df = df[(df.year >= 1960) & (df.year < 2023) & (df.language == 'en')]
     
     # Delete rows containing NaN values
-    df.dropna(inplace=True)
-    if df[df.isnull().any(axis=1)]:
-        raise Exception("Data contain nan value")
-    
-    # filter values by date (1960 - 2022)
-    df = df[(df.year >= 1960) & (df.year < 2023)]
-    
+    df = df.dropna()
+
     # add decade column
     df['decade'] = df['year'].map(lambda x : int(math.trunc(x / 10) * 10))
+
+    return df
 
 

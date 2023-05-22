@@ -5,23 +5,20 @@ from gensim.models.ldamulticore import LdaMulticore
 from gensim.corpora.dictionary import Dictionary
 from gensim.test.utils import datapath
 
+
 # utils
 from datetime import datetime
 import logging
 import re
 import os
-import tqdm
+from tqdm import tqdm
 
 # dashboards
 import pyLDAvis
-import pyLDAvis.gensim
-import matplotlib.pyplot as plt
+import pyLDAvis.gensim_models
 
 # TSNE dependencies
 from sklearn.manifold import TSNE
-from bokeh.plotting import figure, output_file, show
-from bokeh.models import Label
-from bokeh.io import output_notebook
 import numpy as np
 import matplotlib.colors as mcolors
 import pandas as pd
@@ -29,17 +26,12 @@ import plotly.graph_objects as go
 
 #gensim_log = '/kaggle/working/log/gensim.log'
 
-#initiate log file
-#logging.basicConfig(filename=gensim_log,
-#                   format='%(asctime)s:%(levelname)s:%(message)s',
-#                    level=logging.INFO,
-#                   force = True)
 
 # utils
 def parse_logfile(path_log):
     matcher = re.compile(r'(-*\d+\.\d+) per-word .* (\d+\.\d+) perplexity')
     likelihoods = []
-    with open(path_log) as source:
+    with open(path_log, 'r') as source:
         for line in source:
             match = matcher.search(line)
             if match:
@@ -47,16 +39,20 @@ def parse_logfile(path_log):
     return likelihoods
 
 
+
 class LDATopicModeling():
     
     def __init__(self, df, lang_preprocess,
                  decade = 1960,
-                 directory = "/kaggle/working/models/",
                  existing = False,
                  n_topics = 10,
                  worker_nodes = None,
                 cross_valid = False,
-                epochs = 30):
+                epochs = 30,
+                log_path = "gensim.log",
+                directory = "/kaggle/working/models/"):
+
+
         # Apply preprocessing on decade data
         self.__documents = df.loc[df.decade == decade, 'lyrics'].apply(lang_preprocess)
             
@@ -67,7 +63,7 @@ class LDATopicModeling():
         #training
         if os.path.isfile(existing):
             # Load a potentially pretrained model from disk.
-            self.model = LdaModel.load(temp_file)
+            self.model = LdaModel.load(directory)
             self.__cv_results = None # no cross_valid
             self.__n_topics = n_topics
         elif not cross_valid:
@@ -77,6 +73,7 @@ class LDATopicModeling():
                 num_topics=n_topics,
                 workers=worker_nodes,
                 passes=epochs)
+            self.__likelihood = parse_logfile(log_path)
             self.__n_topics = n_topics
             self.__cv_results = None
         else: # cross validation
@@ -227,11 +224,11 @@ class LDATopicModeling():
     def dashboard_LDAvis(self):
         # some basic dataviz
         pyLDAvis.enable_notebook()
-        vis = pyLDAvis.gensim.prepare(self.model, self.__corpus,
+        vis = pyLDAvis.gensim_models.prepare(self.model, self.__corpus,
                                       dictionary = self.model.id2word)
         return vis
         
-    def plot_tsne(self):
+    def plot_tsne(self, components = 2):
         # n-1 rows each is a vector with i-1 posisitons, where n the number of documents
         # i the topic number and tmp[i] = probability of topic i
         topic_weights = []
@@ -241,37 +238,69 @@ class LDATopicModeling():
                 tmp[i] = w
             topic_weights.append(tmp)
 
-
         # Array of topic weights    
         arr = pd.DataFrame(topic_weights).fillna(0).values
-
-        # Keep the well separated points (optional)
-        arr = arr[np.amax(arr, axis=1) > 0.35]
-
-        # Dominant topic number in each doc
+        
+        # Keep the well separated points
+        # filter documents with highest topic probability given lower bown (optional)
+        # arr = arr[np.amax(arr, axis=1) > 0.35]
+      
+        # Dominant topic number in each doc (to compute color)
         topic_num = np.argmax(arr, axis=1)
 
         # tSNE Dimension Reduction
-        tsne_model = TSNE(n_components=2, verbose=1, init='pca')
+        tsne_model = TSNE(n_components=components, verbose=1, init='pca')
         tsne_lda = tsne_model.fit_transform(arr)
-
-        # Plot the Topic Clusters using Bokeh
-        output_notebook()
-        mycolors = np.array([color for name, color in mcolors.TABLEAU_COLORS.items()])
-        plot = figure(title="t-SNE Clustering of {} LDA Topics".format(self.__n_topics), 
-                      plot_width=900, plot_height=700)
-        plot.scatter(x=tsne_lda[:,0], y=tsne_lda[:,1], color=mycolors[topic_num])
-        show(plot)
+        
+        mycolors = np.array([color for _, color in mcolors.TABLEAU_COLORS.items()])
+        
+        # components
+        if components == 2:
+            fig = go.Figure(
+                go.Scatter(x=tsne_lda[:,0],
+                        y=tsne_lda[:,1],
+                        marker_color=mycolors[topic_num],
+                        mode='markers',
+                        name='TSNE'))
+            fig.update_layout(
+                title = "t-SNE Clustering of {} LDA Topics".format(self.__n_topics),
+                xaxis_title="x",
+                yaxis_title="y",
+                autosize=False,
+                width=900,
+                height=700)
+        elif components == 3:
+            fig = go.Figure(
+                go.Scatter3d(
+                        x=tsne_lda[:,0],
+                        y=tsne_lda[:,1],
+                        z=tsne_lda[:,2],
+                        marker_color=mycolors[topic_num],
+                        mode='markers',
+                        name='Tsne'))
+            fig.update_layout(
+                title = "t-SNE Clustering of {} LDA Topics".format(self.__n_topics),
+                xaxis_title="x",
+                yaxis_title="y")
+        else:
+            raise Exception("Components exceed covered numbers : {}".format(components))
+        return fig
+        
+        #plot = figure(title="t-SNE Clustering of {} LDA Topics".format(self.__n_topics), 
+        #             plot_width=900, plot_height=700)
+        #plot.scatter(x=tsne_lda[:,0], y=tsne_lda[:,1], color=mycolors[topic_num])
+        #show(plot)
         
     def plot_likelihood(self):
         fig = go.Figure(
-            go.Scatter(x=[range(0,50)], y=self.__likelihood[-50:],
+            go.Scatter(x=list(range(0,30)),
+                       y=self.__likelihood[-30:],
                        mode='lines',
                        name='lines'))
         fig.update_layout(
             title = "Likelihood over passes",
-            xaxis_title="Likekihood",
-            yaxis_title="passes")
+            xaxis_title="passes",
+            yaxis_title="Likekihood")
         return fig
     
 

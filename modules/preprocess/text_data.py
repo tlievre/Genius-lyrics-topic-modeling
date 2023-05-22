@@ -24,6 +24,19 @@ def clean_lyrics(df):
     df.update(cleaned_text)
     return df
 
+# preprocess without ignoring stop words and lematize
+def naive_preprocess(text, nlp):
+
+    #TOKENISATION
+    tokens =[]
+    for token in nlp(text):
+        tokens.append(token)
+    
+    # return list of words
+    return [word.text for word in tokens if word.text.isalpha()]
+
+    
+
 # default preprocessing
 def preprocess(text, nlp):
 
@@ -59,7 +72,7 @@ def ngram_models(df):
     return bigram_model, trigram_model
 
 
-# default preprocessing
+# ngram preprocessing
 def ngram_preprocess(text, nlp,
                      bigram_model,
                      trigram_model,

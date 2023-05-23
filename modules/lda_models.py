@@ -24,14 +24,13 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import plotly.graph_objects as go
 
-#gensim_log = '/kaggle/working/log/gensim.log'
 
 
 # utils
 def parse_logfile(path_log):
     matcher = re.compile(r'(-*\d+\.\d+) per-word .* (\d+\.\d+) perplexity')
     likelihoods = []
-    with open(path_log, 'r') as source:
+    with open(path_log) as source:
         for line in source:
             match = matcher.search(line)
             if match:
@@ -39,20 +38,21 @@ def parse_logfile(path_log):
     return likelihoods
 
 
-
 class LDATopicModeling():
     
-    def __init__(self, df, lang_preprocess,
+    def __init__(self, df,
+                 lang_preprocess,
                  decade = 1960,
+                 directory = "/kaggle/working/models/",
+                 gensim_log = "/kaggle/working/gensim.log",
                  existing = False,
                  n_topics = 10,
                  worker_nodes = None,
-                cross_valid = False,
-                epochs = 30,
-                log_path = "gensim.log",
-                directory = "/kaggle/working/models/"):
-
-
+                grid_search = False,
+                epochs = 30):
+        # get the metat data
+        self.__meta_data = df[df.decade == decade][['artist', 'title']]
+        
         # Apply preprocessing on decade data
         self.__documents = df.loc[df.decade == decade, 'lyrics'].apply(lang_preprocess)
             
@@ -64,16 +64,16 @@ class LDATopicModeling():
         if os.path.isfile(existing):
             # Load a potentially pretrained model from disk.
             self.model = LdaModel.load(directory)
-            self.__cv_results = None # no cross_valid
+            self.__cv_results = None # no grid_search
             self.__n_topics = n_topics
-        elif not cross_valid:
+        elif not grid_search:
             self.model = LdaMulticore(
                 corpus=tqdm(self.__corpus),
                 id2word=self.__id2word,
                 num_topics=n_topics,
                 workers=worker_nodes,
                 passes=epochs)
-            self.__likelihood = parse_logfile(log_path)
+            self.__likelihood = parse_logfile(gensim_log)
             self.__n_topics = n_topics
             self.__cv_results = None
         else: # cross validation
@@ -96,59 +96,70 @@ class LDATopicModeling():
             }
             
             # topic range
-            topic_range = range(2, n_topics+1)
+            topic_range = range(5, n_topics+1)
             
             # prevent the computation time
             total=(len(eta)*len(alpha)*len(topic_range))
             print("total lda computation: ",total)
-            model_list = []
             
-            for k in topic_range:
-                for a in alpha:
-                    for e in eta:
-                        
-                        # train the model
-                        model = LdaMulticore(
-                            corpus=self.__corpus,
-                            id2word=self.__id2word,
-                            num_topics=k,
-                            workers=worker_nodes,
-                            passes=epochs,
-                            alpha=a,
-                            eta=e)
-                        
-                        # compute coherence
-                        cv = CoherenceModel(
-                            model=model,
-                            texts=self.__documents,
-                            dictionary=self.__id2word,
-                            coherence='c_v')
-                        
-                        print('coherence: {}\nalpha: {}\neta: {}\ntopic: {}'.format(
-                            cv.get_coherence(), a, e, k))
-                        
-                         # Save the model results
-                        cv_results['topics'].append(k)
-                        cv_results['alpha'].append(a)
-                        cv_results['eta'].append(e)
-                        cv_results['coherence'].append(cv.get_coherence())
-                        model_list.append(model)
+            # initialize incremental list
+            model_list = []
+            likelihood_list = []
+            
+            grid = [{'n_top': k, 'alpha': a, 'eta' : e}
+                        for k in topic_range for a in alpha for e in eta]
+
+            for param in grid:           
+                # train the model
+                model = LdaMulticore(
+                    corpus=self.__corpus,
+                    id2word=self.__id2word,
+                    num_topics=param['n_top'],
+                    workers=worker_nodes,
+                    passes=epochs,
+                    alpha=param['alpha'],
+                    eta=param['eta'])
+                
+                # track likelihood
+                likelihood = parse_logfile(gensim_log)
+                likelihood_list.append(likelihood)
+                
+                # compute coherence
+                cv = CoherenceModel(
+                    model=model,
+                    texts=self.__documents,
+                    dictionary=self.__id2word,
+                    coherence='c_v')
+                
+                print('coherence: {}\nalpha: {}\neta: {}\ntopic: {}'.format(
+                    cv.get_coherence(), param['alpha'], param['eta'], param['n_top']))
+                
+                # Save the model results
+                cv_results['topics'].append(param['n_top'])
+                cv_results['alpha'].append(param['alpha'])
+                cv_results['eta'].append(param['eta'])
+                cv_results['coherence'].append(cv.get_coherence())
+                model_list.append(model)
             # retrieve index of the highest coherence model
             best_index = np.argmax(cv_results['coherence'])
             
             # choose the model given the best coherence
             self.model = model_list[best_index]
             
+            # choose likelihood of the best model
+            self.__likelihood = likelihood_list[best_index]
+            
             # save results as attribute
             self.__cv_results = cv_results
             
             self.__n_topics = cv_results['topics'][best_index]
                                     
-            # logging doesn't work on Kaggle
-            #self.__likelihood = parse_logfile()
         # directory path
         self.__directory = directory
-    
+        
+        # decade
+        self.__decade = decade
+        
     # getters
     @property
     def get_id2word(self):
@@ -204,9 +215,9 @@ class LDATopicModeling():
         except:
             pass
         # Save model to disk.
-        temp_file = datapath(self.__directory + now.strftime("%d%m%Y_%H%M%S") + '/model')
+        model_path = datapath(self.__directory + now.strftime("%d%m%Y_%H%M%S") + '/model')
         
-        self.model.save(temp_file)
+        self.model.save(model_path)
 
     def get_perplexity(self):
         return self.model.log_perplexity(self.__corpus)
@@ -252,7 +263,7 @@ class LDATopicModeling():
         tsne_model = TSNE(n_components=components, verbose=1, init='pca')
         tsne_lda = tsne_model.fit_transform(arr)
         
-        mycolors = np.array([color for _, color in mcolors.TABLEAU_COLORS.items()])
+        mycolors = np.array([color for name, color in mcolors.TABLEAU_COLORS.items()])
         
         # components
         if components == 2:
@@ -261,9 +272,20 @@ class LDATopicModeling():
                         y=tsne_lda[:,1],
                         marker_color=mycolors[topic_num],
                         mode='markers',
-                        name='TSNE'))
+                        name='Tsne 2d: '+ str(self.__decade),
+                        customdata=np.stack(
+                            (self.__meta_data['title'],
+                            self.__meta_data['artist']),
+                            axis=-1
+                        ),
+                        hovertemplate = 
+                            "title: %{customdata[0]}<br>" +
+                            "artist: %{customdata[1]}<br>" +
+                            "x: %{x}" + "y: %{y}"
+                )
+            )
             fig.update_layout(
-                title = "t-SNE Clustering of {} LDA Topics".format(self.__n_topics),
+                title = "t-SNE 2d Clustering of {} LDA Topics ({})".format(self.__n_topics, self.__decade),
                 xaxis_title="x",
                 yaxis_title="y",
                 autosize=False,
@@ -277,9 +299,20 @@ class LDATopicModeling():
                         z=tsne_lda[:,2],
                         marker_color=mycolors[topic_num],
                         mode='markers',
-                        name='Tsne'))
+                        name='Tsne 3d: '+ str(self.__decade),
+                        customdata=np.stack(
+                            (self.__meta_data['title'],
+                            self.__meta_data['artist']),
+                            axis=-1
+                            ),
+                        hovertemplate = 
+                            "title: %{customdata[0]}<br>" +
+                            "artist: %{customdata[1]}<br>" +
+                            "x: %{x}" + "y: %{y}" + "z: %{z}"
+                )
+            )
             fig.update_layout(
-                title = "t-SNE Clustering of {} LDA Topics".format(self.__n_topics),
+                title = "t-SNE 3d Clustering of {} LDA Topics ({})".format(self.__n_topics, self.__decade),
                 xaxis_title="x",
                 yaxis_title="y")
         else:
@@ -291,10 +324,9 @@ class LDATopicModeling():
         #plot.scatter(x=tsne_lda[:,0], y=tsne_lda[:,1], color=mycolors[topic_num])
         #show(plot)
         
-    def plot_likelihood(self):
+    def plot_likelihood(self, upper_bound=35):
         fig = go.Figure(
-            go.Scatter(x=list(range(0,30)),
-                       y=self.__likelihood[-30:],
+            go.Scatter(x=[i for i in range(0,upper_bound)], y=self.__likelihood[-upper_bound:],
                        mode='lines',
                        name='lines'))
         fig.update_layout(
@@ -309,7 +341,7 @@ class LDAPipeline():
     
     def __init__(self,
                  prep,
-                 cv = False,
+                 gs = False,
                  decades = [
         1960, 1970, 1980, 1990, 2000, 2010, 2020
     ]):
@@ -318,7 +350,7 @@ class LDAPipeline():
                 decade = decade,
                 lang_preprocess = prep,
                 epochs = 10,
-                cross_valid = cv) for decade in decades}
+                grid_search = gs) for decade in decades}
         
     def get_metrics(self):
         # compute metrics

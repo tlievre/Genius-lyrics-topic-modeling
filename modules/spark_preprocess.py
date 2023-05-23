@@ -2,8 +2,11 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf
 from pyspark.sql.types import IntegerType
 from pyspark.sql.functions import min, col
+
 from modules.loader import Loader # relative import relate to notebook
+
 import math
+import os
 
 @udf(IntegerType())
 def decade(year):
@@ -12,10 +15,13 @@ def decade(year):
 
 class SparkSPreprocessor():
 
-    def __init__(self, input_path, parquet_path, driver_memory = "20g"):
-        
-        # produce parket file
-        parquet_file = Loader(in_path=input_path, out_path=parquet_path).produce_parket()
+    def __init__(self, input_path, parquet_path, parquet_name,driver_memory = "20g"):
+
+
+        if not os.path.isfile(parquet_path + parquet_name):
+            # produce parket file
+            Loader(in_path=input_path, out_path=parquet_path) \
+                .produce_parket(filename = parquet_name)
 
         spark = SparkSession.builder \
             .appName("MyApp") \
@@ -23,7 +29,7 @@ class SparkSPreprocessor():
             .config("spark.driver.memory", driver_memory) \
             .getOrCreate()
         
-        self.__df = spark.read.parquet(parquet_file)
+        self.__df = spark.read.parquet(parquet_path + parquet_name)
 
 
     def preprocess_data(self, begin = 1960, end = 2023, freq = 1,

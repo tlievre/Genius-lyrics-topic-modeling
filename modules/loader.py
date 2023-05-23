@@ -16,7 +16,7 @@ pio.templates.default = "plotly_white"
 
 class Loader():
 
-    def __init__(self, in_path, out_path):
+    def __init__(self, in_path, out_path, chunksize = 10**3):
         """
         Args:
             in_path (str): csv input path.
@@ -26,7 +26,7 @@ class Loader():
 
         self.__in_path = in_path
         self.__out_path = out_path
-        self.__chunksize = 10**3
+        self.__chunksize = chunksize
 
     def __produce_pickles(self):
         """produce pickles by reading csv by chunksize
@@ -38,18 +38,21 @@ class Loader():
                 # directory already exists
                 pass
             for i, chunk in enumerate(reader):
-                out_file = self.__out_path + "/data_{}.pkl".format(i+1)
+                out_file = self.__out_path + "data_{}.pkl".format(i+1)
                 with open(out_file, "wb") as f:
                     pickle.dump(chunk, f, pickle.HIGHEST_PROTOCOL)
 
-    def produce_parket(self):
+    def produce_parket(self, filename):
         """produce parquet file reading by chunksize
+
+        Args:
+            filename (str): output parquet file name.
 
         Returns:
             str: parquet_path
         """
 
-        parquet_path = self.__out_path + "preprocess_data.parquet"
+        parquet_path = self.__out_path + filename
 
         with pd.read_csv(self.__in_path, chunksize=self.__chunksize) as csv_stream:
             try:

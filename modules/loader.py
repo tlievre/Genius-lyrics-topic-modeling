@@ -7,10 +7,7 @@ import pickle
 import glob
 import os
 
-import dask.dataframe as dd
-
 # data visualisation lib
-import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
 
@@ -45,9 +42,15 @@ class Loader():
                 with open(out_file, "wb") as f:
                     pickle.dump(chunk, f, pickle.HIGHEST_PROTOCOL)
 
-    def __produce_parket(self):
+    def produce_parket(self):
         """produce parquet file reading by chunksize
+
+        Returns:
+            str: parquet_path
         """
+
+        parquet_path = self.__out_path + "preprocess_data.parquet"
+
         with pd.read_csv(self.__in_path, chunksize=self.__chunksize) as csv_stream:
             try:
                 os.makedirs(self.__out_path)
@@ -60,11 +63,12 @@ class Loader():
                     # Guess the schema of the CSV file from the first chunk
                     parquet_schema = pa.Table.from_pandas(df=chunk).schema
                     # Open a Parquet file for writing
-                    parquet_writer = pq.ParquetWriter(
-                        self.__out_path + "data.parquet", parquet_schema, compression='snappy')
+                    parquet_writer = pq.ParquetWriter(parquet_path,
+                            parquet_schema, compression='snappy')
                 # Write CSV chunk to the parquet file
                 table = pa.Table.from_pandas(chunk, schema=parquet_schema)
                 parquet_writer.write_table(table)
+        return parquet_path
     
     def load_pickle(self, pickle_id):
         """load a pickle file by id

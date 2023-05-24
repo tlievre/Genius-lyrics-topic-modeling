@@ -7,6 +7,9 @@ import pickle
 import glob
 import os
 
+# monitoring
+from tqdm import tqdm
+
 # data visualisation lib
 import plotly.graph_objects as go
 import plotly.io as pio
@@ -60,8 +63,8 @@ class Loader():
             except FileExistsError:
                 # directory already exists
                 pass
-            for i, chunk in enumerate(csv_stream):
-                print("Chunk", i)
+            for i, chunk in tqdm(enumerate(csv_stream)):
+                #print("Chunk", i)
                 if i == 0:
                     # Guess the schema of the CSV file from the first chunk
                     parquet_schema = pa.Table.from_pandas(df=chunk).schema

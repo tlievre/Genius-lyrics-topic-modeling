@@ -3,7 +3,7 @@ from pyspark.sql.functions import udf
 from pyspark.sql.types import IntegerType
 from pyspark.sql.functions import min, col
 
-from modules.loader import Loader # relative import relate to notebook
+from loader import Loader # relative import relate to notebook
 
 import math
 import os

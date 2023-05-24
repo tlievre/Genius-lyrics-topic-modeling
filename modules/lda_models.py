@@ -5,17 +5,13 @@ from gensim.models.ldamulticore import LdaMulticore
 from gensim.corpora.dictionary import Dictionary
 from gensim.test.utils import datapath
 
-
 # utils
 from datetime import datetime
 import logging
 import re
 import os
+import sys
 from tqdm import tqdm
-
-# dashboards
-import pyLDAvis
-import pyLDAvis.gensim_models
 
 # TSNE dependencies
 from sklearn.manifold import TSNE
@@ -24,7 +20,14 @@ import matplotlib.colors as mcolors
 import pandas as pd
 import plotly.graph_objects as go
 
+# dashboards
+import pyLDAvis
 
+# In order to deal with python version import in Kaggle
+if sys.version_info > (3,9):
+    import pyLDAvis.gensim_models
+else:
+    import pyLDAvis.gensim
 
 # utils
 def parse_logfile(path_log):

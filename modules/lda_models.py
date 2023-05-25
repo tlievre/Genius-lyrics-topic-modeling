@@ -24,10 +24,9 @@ import plotly.graph_objects as go
 import pyLDAvis
 
 # In order to deal with python version import in Kaggle
-if sys.version_info > (3,9):
+if sys.version_info == (3,9,13, 'final', 0):
     import pyLDAvis.gensim_models
-else:
-    import pyLDAvis.gensim
+
 
 # utils
 def parse_logfile(path_log):
@@ -236,10 +235,22 @@ class LDATopicModeling():
     
     # data vizualisation
     def dashboard_LDAvis(self):
-        # some basic dataviz
+        
+        # enable notebook mode
         pyLDAvis.enable_notebook()
-        vis = pyLDAvis.gensim_models.prepare(self.model, self.__corpus,
-                                      dictionary = self.model.id2word)
+
+        # use the conresponding function given the
+        # suitable imported module
+        if sys.version_info == (3,9,13, 'final', 0):
+            vis = pyLDAvis.gensim_models.prepare(
+                self.model, self.__corpus,
+                dictionary = self.model.id2word
+            )
+        else:
+            vis = pyLDAvis.gensim.prepare(
+                self.model, self.__corpus,
+                dictionary = self.model.id2word
+            )
         return vis
         
     def plot_tsne(self, components = 2):
@@ -271,62 +282,62 @@ class LDATopicModeling():
         # components
         if components == 2:
             fig = go.Figure(
-                go.Scatter(x=tsne_lda[:,0],
-                        y=tsne_lda[:,1],
-                        marker_color=mycolors[topic_num],
-                        mode='markers',
-                        name='Tsne 2d: '+ str(self.__decade),
-                        customdata=np.stack(
-                            (self.__meta_data['title'],
-                            self.__meta_data['artist']),
-                            axis=-1
-                        ),
-                        hovertemplate = 
-                            "title: %{customdata[0]}<br>" +
-                            "artist: %{customdata[1]}<br>" +
-                            "x: %{x}" + "y: %{y}"
+                go.Scatter(
+                    x=tsne_lda[:,0],
+                    y=tsne_lda[:,1],
+                    marker_color=mycolors[topic_num],
+                    mode='markers',
+                    name='Tsne 2d: '+ str(self.__decade),
+                    customdata=np.stack(
+                        (self.__meta_data['title'],
+                        self.__meta_data['artist']),
+                        axis=-1
+                    ),
+                    hovertemplate = 
+                        "title: %{customdata[0]}<br>" +
+                        "artist: %{customdata[1]}<br>" +
+                        "x: %{x}" + "y: %{y}"
                 )
             )
             fig.update_layout(
-                title = "t-SNE 2d Clustering of {} LDA Topics ({})".format(self.__n_topics, self.__decade),
+                title = "t-SNE 2d Clustering of {} LDA Topics ({})" \
+                    .format(self.__n_topics, self.__decade),
                 xaxis_title="x",
                 yaxis_title="y",
                 autosize=False,
                 width=900,
-                height=700)
+                height=700
+            )
         elif components == 3:
             fig = go.Figure(
                 go.Scatter3d(
-                        x=tsne_lda[:,0],
-                        y=tsne_lda[:,1],
-                        z=tsne_lda[:,2],
-                        marker_color=mycolors[topic_num],
-                        mode='markers',
-                        name='Tsne 3d: '+ str(self.__decade),
-                        customdata=np.stack(
-                            (self.__meta_data['title'],
-                            self.__meta_data['artist']),
-                            axis=-1
-                            ),
-                        hovertemplate = 
-                            "title: %{customdata[0]}<br>" +
-                            "artist: %{customdata[1]}<br>" +
-                            "x: %{x}" + "y: %{y}" + "z: %{z}"
+                    x=tsne_lda[:,0],
+                    y=tsne_lda[:,1],
+                    z=tsne_lda[:,2],
+                    marker_color=mycolors[topic_num],
+                    mode='markers',
+                    name='Tsne 3d: '+ str(self.__decade),
+                    customdata=np.stack(
+                        (self.__meta_data['title'],
+                        self.__meta_data['artist']),
+                        axis=-1
+                        ),
+                    hovertemplate = 
+                        "title: %{customdata[0]}<br>" +
+                        "artist: %{customdata[1]}<br>" +
+                        "x: %{x}" + "y: %{y}" + "z: %{z}"
                 )
             )
             fig.update_layout(
-                title = "t-SNE 3d Clustering of {} LDA Topics ({})".format(self.__n_topics, self.__decade),
+                title = "t-SNE 3d Clustering of {} LDA Topics ({})" \
+                    .format(self.__n_topics, self.__decade),
                 xaxis_title="x",
                 yaxis_title="y")
         else:
             raise Exception("Components exceed covered numbers : {}".format(components))
         return fig
         
-        #plot = figure(title="t-SNE Clustering of {} LDA Topics".format(self.__n_topics), 
-        #             plot_width=900, plot_height=700)
-        #plot.scatter(x=tsne_lda[:,0], y=tsne_lda[:,1], color=mycolors[topic_num])
-        #show(plot)
-        
+    
     def plot_likelihood(self, upper_bound=35):
         fig = go.Figure(
             go.Scatter(x=[i for i in range(0,upper_bound)], y=self.__likelihood[-upper_bound:],

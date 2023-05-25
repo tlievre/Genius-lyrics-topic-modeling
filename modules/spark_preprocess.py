@@ -248,12 +248,16 @@ class SparkSPreprocessor():
     """Preprocess and sample data for analysis
     """
 
-    def __init__(self, input_path, parquet_path, parquet_name,driver_memory = "20g"):
+    def __init__(self, input_path,
+                 parquet_path,
+                 parquet_name,
+                 chunk_size = 10**4,
+                 driver_memory = "20g"):
 
 
         if not os.path.isfile(parquet_path + parquet_name):
             # produce parket file
-            Loader(in_path=input_path, out_path=parquet_path) \
+            Loader(input_path, parquet_path, chunk_size) \
                 .produce_parket(filename = parquet_name)
 
         spark = SparkSession.builder \
@@ -277,10 +281,12 @@ class SparkSPreprocessor():
         #   - bounding years release (1960 - 2023)
         #   - English song
         #   - oultlier artist 'Genius Translations'
+        #   - misc tag which are not associated to any style
         filter_query = self.__df.filter(
                 self.__df.year.between(begin, end) & 
                 (self.__df.language == 'en') &
-                (self.__df.artist != 'Genius English Translations')) \
+                (self.__df.artist != 'Genius English Translations') &
+                (self.__df.tag != 'misc')) \
             .withColumn("decade", decade(self.__df.year)) \
             .na.drop(subset=["title"])
         

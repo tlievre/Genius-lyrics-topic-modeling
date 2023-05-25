@@ -26,6 +26,8 @@ import pyLDAvis
 # In order to deal with python version import in Kaggle
 if sys.version_info == (3,9,13, 'final', 0):
     import pyLDAvis.gensim_models
+else:
+    import pyLDAvis.gensim
 
 
 # utils

@@ -38,7 +38,7 @@ def naive_preprocess(text, nlp):
     
 
 # default preprocessing
-def preprocess(text, nlp):
+def preprocess(text, nlp, new_stopwords = {"'d"}):
 
     #TOKENISATION
     tokens =[]
@@ -46,11 +46,12 @@ def preprocess(text, nlp):
         tokens.append(token)
 
     #REMOVING STOP WORDS
-    spacy_stopwords = nlp.Defaults.stop_words
-    sentence =  [word for word in tokens if word.text.isalpha() and word.text not in spacy_stopwords]
+    spacy_stopwords = nlp.Defaults.stop_words | new_stopwords
 
-    #LEMMATISATION
-    sentence = [word.lemma_ for word in sentence]
+    # filter values
+    sentence = [word.lemma_ for word in tokens if word.text.isalpha() and
+                    len(word.text) > 3 and word.text not in spacy_stopwords and
+                    word.pos_ != 'VERB' and word.pos_ != 'PART' ]
 
     return sentence
 
@@ -76,7 +77,7 @@ def ngram_models(df):
 def ngram_preprocess(text, nlp,
                      bigram_model,
                      trigram_model,
-                     new_stopwords):
+                     new_stopwords = {"'d"}):
 
     # perform basic preprocessing to transform sentence to list of words
     words = gensim.utils.simple_preprocess(text)
@@ -100,7 +101,9 @@ def ngram_preprocess(text, nlp,
     #tokenization to get lemma
     tokens = [token for token in nlp(sentence)]
     
-    #LEMMATISATION and filter alphanumeric characters
-    sentence = [word.lemma_ for word in tokens if word.text.isalpha()]
+    #LEMMATISATION and filters
+    sentence = [word.lemma_ for word in tokens if word.text.isalpha() and
+                    len(word.text) > 3 and word.text not in spacy_stopwords and
+                    word.pos_ != 'VERB' and word.pos_ != 'PART' ]
 
     return sentence

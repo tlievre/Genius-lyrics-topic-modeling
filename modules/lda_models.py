@@ -215,11 +215,11 @@ class LDATopicModeling():
         now = datetime.now()
         # create the directory if it doesn't exist
         try:
-            os.makedirs(self.__directory + now.strftime("%d%m%Y_%H%M%S"))
+            os.makedirs(self.__directory)
         except:
             pass
         # Save model to disk.
-        model_path = datapath(self.__directory + now.strftime("%d%m%Y_%H%M%S") + '/model')
+        model_path = datapath(self.__directory + 'lda_' + now.strftime("%d%m%Y_%H%M%S"))
         
         self.model.save(model_path)
 

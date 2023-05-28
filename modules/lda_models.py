@@ -46,7 +46,7 @@ class LDATopicModeling():
     
     def __init__(self, df,
                  lang_preprocess,
-                 decade = 1960,
+                 decade = [1960],
                  directory = "/kaggle/working/models/",
                  gensim_log = "/kaggle/working/gensim.log",
                  existing = False,
@@ -55,10 +55,10 @@ class LDATopicModeling():
                 grid_search = False,
                 epochs = 30):
         # get the metat data
-        self.__meta_data = df[df.decade == decade][['artist', 'title']]
+        self.__meta_data = df[df['decade'].isin(decade)][['artist', 'title']]
         
         # Apply preprocessing on decade data
-        self.__documents = df.loc[df.decade == decade, 'lyrics'].apply(lang_preprocess)
+        self.__documents = df.loc[df['decade'].isin(decade), 'lyrics'].apply(lang_preprocess)
             
         # Create a corpus from a list of texts
         self.__id2word = Dictionary(self.__documents.tolist())

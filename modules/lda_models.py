@@ -218,10 +218,8 @@ class LDATopicModeling():
             os.makedirs(self.__directory)
         except:
             pass
-        # Save model to disk.
-        model_path = datapath(self.__directory + 'lda_' + now.strftime("%d%m%Y_%H%M%S"))
         
-        self.model.save(model_path)
+        self.model.save(self.__directory + 'lda_' + now.strftime("%d%m%Y_%H%M%S"))
 
     def get_perplexity(self):
         return self.model.log_perplexity(self.__corpus)

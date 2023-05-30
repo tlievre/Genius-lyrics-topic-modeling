@@ -277,28 +277,39 @@ class LDATopicModeling():
         tsne_model = TSNE(n_components=components, verbose=1, init='pca')
         tsne_lda = tsne_model.fit_transform(arr)
         
-        mycolors = np.array([color for name, color in mcolors.TABLEAU_COLORS.items()])
-        
+        #mycolors = np.array([color for name, color in mcolors.TABLEAU_COLORS.items()])
+    
+
         # components
         if components == 2:
-            fig = go.Figure(
-                go.Scatter(
-                    x=tsne_lda[:,0],
-                    y=tsne_lda[:,1],
-                    marker_color=mycolors[topic_num],
-                    mode='markers',
-                    name='Tsne 2d: '+ str(self.__decade),
-                    customdata=np.stack(
-                        (self.__meta_data['title'],
-                        self.__meta_data['artist']),
-                        axis=-1
-                    ),
-                    hovertemplate = 
-                        "title: %{customdata[0]}<br>" +
-                        "artist: %{customdata[1]}<br>" +
-                        "x: %{x}" + "y: %{y}"
+            # create representation df
+            tsne_rep = pd.DataFrame({'x': tsne_lda[:,0],
+                                     'y': tsne_lda[:,1],
+                                     'topic': topic_num})
+            # create figure
+            fig = go.Figure()
+            # create a topic list
+            topic_list = sorted(tsne_rep['topic'].unique().tolist())
+            # cross over topics
+            for topic in topic_list:
+                # select rows of the given topic
+                df_topic = tsne_rep[tsne_rep['topic'] == topic]
+                # add scatter plot
+                fig.add_scatter(
+                        x=df_topic['x'],
+                        y=df_topic['y'],
+                        mode='markers',
+                        name='Topic '+ str(topic),
+                        customdata=np.stack(
+                            (self.__meta_data['title'],
+                            self.__meta_data['artist']),
+                            axis=-1
+                        ),
+                        hovertemplate = 
+                            "title: %{customdata[0]}<br>" +
+                            "artist: %{customdata[1]}<br>" +
+                            "x: %{x}" + "y: %{y}"
                 )
-            )
             fig.update_layout(
                 title = "t-SNE 2d Clustering of {} LDA Topics ({})" \
                     .format(self.__n_topics, self.__decade),
@@ -309,25 +320,36 @@ class LDATopicModeling():
                 height=700
             )
         elif components == 3:
-            fig = go.Figure(
-                go.Scatter3d(
-                    x=tsne_lda[:,0],
-                    y=tsne_lda[:,1],
-                    z=tsne_lda[:,2],
-                    marker_color=mycolors[topic_num],
-                    mode='markers',
-                    name='Tsne 3d: '+ str(self.__decade),
-                    customdata=np.stack(
-                        (self.__meta_data['title'],
-                        self.__meta_data['artist']),
-                        axis=-1
+            # create representation df
+            tsne_rep = pd.DataFrame({'x': tsne_lda[:,0],
+                                     'y': tsne_lda[:,1],
+                                     'z': tsne_lda[:,2],
+                                     'topic': topic_num})
+            # create figure
+            fig = go.Figure()
+            # create a topic list
+            topic_list = sorted(tsne_rep['topic'].unique().tolist())
+            # cross over topics
+            for topic in topic_list:
+                # select rows of the given topic
+                df_topic = tsne_rep[tsne_rep['topic'] == topic]
+                # add scatter plot
+                fig.add_scatter3d(
+                        x=df_topic['x'],
+                        y=df_topic['y'],
+                        z=df_topic['z'],
+                        mode='markers',
+                        name='Topic '+ str(topic),
+                        customdata=np.stack(
+                            (self.__meta_data['title'],
+                            self.__meta_data['artist']),
+                            axis=-1
                         ),
-                    hovertemplate = 
-                        "title: %{customdata[0]}<br>" +
-                        "artist: %{customdata[1]}<br>" +
-                        "x: %{x}" + "y: %{y}" + "z: %{z}"
+                        hovertemplate = 
+                            "title: %{customdata[0]}<br>" +
+                            "artist: %{customdata[1]}<br>" +
+                            "x: %{x}" + "y: %{y}" + "z: %{z}"
                 )
-            )
             fig.update_layout(
                 title = "t-SNE 3d Clustering of {} LDA Topics ({})" \
                     .format(self.__n_topics, self.__decade),

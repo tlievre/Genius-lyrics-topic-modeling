@@ -54,6 +54,32 @@ Let's draw a plan of the process in 4 steps :
 ![distribution schema](img/distribution_schema.png)
 
 
+### mermaid
+
+```
+sequenceDiagram
+client script->>+SparkPreprocess: SparkPreprocess()
+SparkPreprocess->>+Loader: Loader()
+SparkPreprocess->>Loader: produce_parquet()
+activate Loader
+loop foreach chunks
+    Loader->>Loader: pandas.read_csv(chunk)
+end
+Loader-->>-client script: song_lyrics.parquet
+deactivate Loader
+SparkPreprocess->>Spark local server: spark = SparkSession()
+activate Spark local server
+client script->>+Spark local server: preprocess_data()
+par thread 1
+Spark local server->>Spark local server: filter_query()
+and thread n
+Spark local server->>Spark local server: filter_query()
+end
+Spark local server->>Spark local server: downSampling() (given smallest decade)
+Spark local server-->>-client script: return pandas.DataFrame
+deactivate Spark local server
+```
+
 ### Gibbs sampling
 
 In this part we focus on the words and we want to maximize the color of the documents (to fix).

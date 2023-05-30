@@ -285,7 +285,10 @@ class LDATopicModeling():
             # create representation df
             tsne_rep = pd.DataFrame({'x': tsne_lda[:,0],
                                      'y': tsne_lda[:,1],
-                                     'topic': topic_num})
+                                     'topic': topic_num,
+                                     'artist': self.__meta_data['artist'],
+                                     'title': self.__meta_data['title']})
+            sample_text = tsne_rep.sample(frac=0.025)
             # create figure
             fig = go.Figure()
             # create a topic list
@@ -296,20 +299,36 @@ class LDATopicModeling():
                 df_topic = tsne_rep[tsne_rep['topic'] == topic]
                 # add scatter plot
                 fig.add_scatter(
-                        x=df_topic['x'],
-                        y=df_topic['y'],
-                        mode='markers',
-                        name='Topic '+ str(topic),
-                        customdata=np.stack(
-                            (self.__meta_data['title'],
-                            self.__meta_data['artist']),
-                            axis=-1
-                        ),
-                        hovertemplate = 
-                            "title: %{customdata[0]}<br>" +
-                            "artist: %{customdata[1]}<br>" +
-                            "x: %{x}" + "y: %{y}"
+                    x=df_topic['x'],
+                    y=df_topic['y'],
+                    mode='markers',
+                    name='Topic '+ str(topic),
+                    customdata=np.stack(
+                        (df_topic['title'],
+                        df_topic['artist']),
+                        axis=-1
+                    ),
+                    hovertemplate = 
+                        "title: %{customdata[0]}<br>" +
+                        "artist: %{customdata[1]}<br>" +
+                        "x: %{x}" + "y: %{y}"
                 )
+            # add random text
+            fig.add_scatter(
+                x=sample_text['x'],
+                y=sample_text['y'],
+                mode='text',
+                text=sample_text['artist'],
+                customdata=np.stack(
+                        (sample_text['title'],
+                        sample_text['artist']),
+                        axis=-1
+                ),
+                hovertemplate = 
+                    "title: %{customdata[0]}<br>" +
+                    "artist: %{customdata[1]}<br>" +
+                    "x: %{x}" + "y: %{y}"
+            )
             fig.update_layout(
                 title = "t-SNE 2d Clustering of {} LDA Topics ({})" \
                     .format(self.__n_topics, self.__decade),
@@ -324,7 +343,10 @@ class LDATopicModeling():
             tsne_rep = pd.DataFrame({'x': tsne_lda[:,0],
                                      'y': tsne_lda[:,1],
                                      'z': tsne_lda[:,2],
-                                     'topic': topic_num})
+                                     'topic': topic_num,
+                                     'artist': self.__meta_data['artist'],
+                                     'title': self.__meta_data['title']})
+            sample_text = tsne_rep.sample(frac=0.025)
             # create figure
             fig = go.Figure()
             # create a topic list
@@ -335,21 +357,38 @@ class LDATopicModeling():
                 df_topic = tsne_rep[tsne_rep['topic'] == topic]
                 # add scatter plot
                 fig.add_scatter3d(
-                        x=df_topic['x'],
-                        y=df_topic['y'],
-                        z=df_topic['z'],
-                        mode='markers',
-                        name='Topic '+ str(topic),
-                        customdata=np.stack(
-                            (self.__meta_data['title'],
-                            self.__meta_data['artist']),
-                            axis=-1
-                        ),
-                        hovertemplate = 
-                            "title: %{customdata[0]}<br>" +
-                            "artist: %{customdata[1]}<br>" +
-                            "x: %{x}" + "y: %{y}" + "z: %{z}"
+                    x=df_topic['x'],
+                    y=df_topic['y'],
+                    z=df_topic['z'],
+                    mode='markers',
+                    name='Topic '+ str(topic),
+                    customdata=np.stack(
+                        (df_topic['title'],
+                        df_topic['artist']),
+                        axis=-1
+                    ),
+                    hovertemplate = 
+                        "title: %{customdata[0]}<br>" +
+                        "artist: %{customdata[1]}<br>" +
+                        "x: %{x}" + "y: %{y}" + "z: %{z}"
                 )
+            # add random text
+            fig.add_scatter3d(
+                x=sample_text['x'],
+                y=sample_text['y'],
+                z=sample_text['z'],
+                mode='text',
+                text=sample_text['artist'],
+                customdata=np.stack(
+                        (sample_text['title'],
+                        sample_text['artist']),
+                        axis=-1
+                ),
+                hovertemplate = 
+                    "title: %{customdata[0]}<br>" +
+                    "artist: %{customdata[1]}<br>" +
+                    "x: %{x}" + "y: %{y}" + "z: %{z}"
+            )
             fig.update_layout(
                 title = "t-SNE 3d Clustering of {} LDA Topics ({})" \
                     .format(self.__n_topics, self.__decade),

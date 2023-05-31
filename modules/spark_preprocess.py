@@ -289,9 +289,9 @@ class SparkSPreprocessor():
         # create a double decade column given previous decade column created (only process 1960-2020 decade)
         # second part of the query
         filter_query = filter_query.withColumn("ddecade", 
-                        when(filter_query.decade == 1960 or filter_query.decade == 1970, 1960) \
-                        .when(filter_query.decade == 1980 or filter_query.decade == 1990, 1980) \
-                        .when(filter_query.decade == 2000 or filter_query.decade == 2010, 2000) \
+                        when(filter_query.decade == 1960 | filter_query.decade == 1970, 1960) \
+                        .when(filter_query.decade == 1980 | filter_query.decade == 1990, 1980) \
+                        .when(filter_query.decade == 2000 | filter_query.decade == 2010, 2000) \
                         .otherwise(filter_query.decade)) \
             .na.drop(subset=["title"])
         

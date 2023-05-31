@@ -279,14 +279,16 @@ class SparkSPreprocessor():
         #   - oultlier artist 'Genius Translations'
         #   - misc tag which are not associated to any style
         # create a decade column
-        # create a double decade column given previous decade column created (only process 1960-2020 decade)
         filter_query = self.__df.filter(
                 self.__df.year.between(begin, end) & 
                 (self.__df.language == 'en') &
                 (self.__df.artist != 'Genius English Translations') &
                 (self.__df.tag != 'misc')) \
-            .withColumn("decade", decade(self.__df.year)) \
-            .withColumn("ddecade", 
+            .withColumn("decade", decade(self.__df.year)) 
+        
+        # create a double decade column given previous decade column created (only process 1960-2020 decade)
+        # second part of the query
+        filter_query = filter_query.withColumn("ddecade", 
                         when(self.__df.decade == 1960 or self.decade == 1970, 1960) \
                         .when(self.__df.decade == 1980 or self.decade == 1990, 1980) \
                         .when(self.__df.decade == 2000 or self.decade == 2010, 2000) \

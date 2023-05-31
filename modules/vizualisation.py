@@ -193,7 +193,7 @@ def words_decades(df, decades, group_by = 'decade'):
                     y=np.log(df_d[df_d['tag'] == tag]['unique_words']),
                     name=tag,
                     boxpoints='all',
-                    marker=dict(color=[color i in range(0, len(tags)])
+                    marker=dict(color=[color i in range(0, len(tags))])
                     customdata=np.stack(
                         (df_d[df_d['tag'] == tag]['title'],
                         df_d[df_d['tag'] == tag]['artist']),

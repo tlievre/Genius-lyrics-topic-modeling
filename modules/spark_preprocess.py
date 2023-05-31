@@ -270,11 +270,8 @@ class SparkSPreprocessor():
 
 
     def preprocess_data(self, begin = 1960, end = 2023, freq = 1,
-                    seed = 117, write_csv = True,
+                    seed = 117, write_csv = True, sample_by = 'decade',
                     csv_path = "./data/preprocessed_data.csv"):
-        
-        # add decade column
-        self.__df.withColumn("decade", decade(self.__df.year))
 
         # get our data of interest by
         # filtering:
@@ -287,11 +284,22 @@ class SparkSPreprocessor():
                 (self.__df.language == 'en') &
                 (self.__df.artist != 'Genius English Translations') &
                 (self.__df.tag != 'misc')) \
-            .withColumn("decade", decade(self.__df.year)) \
+            .withColumn("decade", decade(self.__df.year)) \ # create a decade column
+            .withColumn("ddecade", # create a double decade column given previous decade column created (only process 1960-2020 decade)
+                        when(self.__df.decade == 1960 or self.decade == 1970, 1960) \
+                        .when(self.__df.decade == 1980 or self.decade == 1990, 1980) \
+                        .when(self.__df.decade == 2000 or self.decade == 2010, 2000) \
+                        .otherwise(self.__df.decade)) \
             .na.drop(subset=["title"])
         
+        # add decade column 
+        #self.__df.withColumn("decade", decade(self.__df.year)) # already added
+        
+        if (sample_by != 'decade') or (sample_by != 'ddecade'):
+            raise Exception('{} isn\'t recognize as an existing column name'.format(sample_by))
+                        
         # compute decade frequency
-        decade_freq = filter_query.groupBy("decade").count()
+        decade_freq = filter_query.groupBy(sample_by).count()
 
         # compute the smallest decade frequency
         n_sample = decade_freq.select(min("count")) \
@@ -301,7 +309,7 @@ class SparkSPreprocessor():
         frac = decade_freq.withColumn("required_n", freq * n_sample / col("count")) \
             .drop("count").rdd.collectAsMap()
         
-        result_query = filter_query.sampleBy("decade", frac, seed)
+        result_query = filter_query.sampleBy(sample_by, frac, seed)
 
         # create pandas result       
         pandas_df = result_query.toPandas()

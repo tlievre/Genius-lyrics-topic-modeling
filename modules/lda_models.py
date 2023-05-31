@@ -19,6 +19,7 @@ import numpy as np
 import matplotlib.colors as mcolors
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # dashboards
 import pyLDAvis
@@ -53,7 +54,13 @@ class LDATopicModeling():
                  n_topics = 10,
                  worker_nodes = None,
                 grid_search = False,
-                epochs = 30):
+                epochs = 30,
+                metric = 'c_v'):
+        
+        # filter metric
+        if (metric != 'c_v') and (metric != 'u_mass'):
+            raise Exception('{} is not known metric'.format(metric))
+
         # get the metat data
         self.__meta_data = df[df['decade'].isin(decade)][['artist', 'title']]
         
@@ -96,7 +103,8 @@ class LDATopicModeling():
                  'topics': [],
                  'alpha': [],
                  'eta': [],
-                 'coherence': []
+                 'c_v': [],
+                 'u_mass': []
             }
             
             # topic range
@@ -135,17 +143,26 @@ class LDATopicModeling():
                     dictionary=self.__id2word,
                     coherence='c_v')
                 
-                print('coherence: {}\nalpha: {}\neta: {}\ntopic: {}'.format(
-                    cv.get_coherence(), param['alpha'], param['eta'], param['n_top']))
+                # compute coherence
+                umass = CoherenceModel(
+                    model=model,
+                    texts=self.__documents,
+                    dictionary=self.__id2word,
+                    coherence='u_mass')
+                
+                print('coherence cv:{}, coherence umass:{}\nalpha:{}\neta:{}\ntopic:{}'.format(
+                    cv.get_coherence(), umass.get_coherence(), param['alpha'], param['eta'], param['n_top']))
                 
                 # Save the model results
                 cv_results['topics'].append(param['n_top'])
                 cv_results['alpha'].append(param['alpha'])
                 cv_results['eta'].append(param['eta'])
-                cv_results['coherence'].append(cv.get_coherence())
+                cv_results['c_v'].append(cv.get_coherence())
+                cv_results['u_mass'].append(umass.get_coherence())
                 model_list.append(model)
             # retrieve index of the highest coherence model
-            best_index = np.argmax(cv_results['coherence'])
+
+            best_index = np.argmax(cv_results[metric])
             
             # choose the model given the best coherence
             self.model = model_list[best_index]
@@ -163,6 +180,9 @@ class LDATopicModeling():
         
         # decade
         self.__decade = decade
+
+        # c_v or u_mass
+        self.__metric = metric
         
     # getters
     @property
@@ -181,26 +201,26 @@ class LDATopicModeling():
     def get_cv_results(self):
         return pd.DataFrame(self.__cv_results) if self.__cv_results else None
     
-    def plot_coherence(self, metric = 'alpha'):
-        """metric(str): alpha or eta
+    def plot_coherence(self):
+        """plot coherence given the two metrics
         """
         if self.__cv_results is None:
             raise Exception('No cross validation available')
         
         # get the dataframe
         df_res = self.get_cv_results
-                                    
+                       
         # groupby by metric
-        grouped = df_res.groupby(metric)
         # create the layout
         fig = go.Figure()
-        for level, df in grouped:
+        for metric in ['c_v', 'u_mass']:
+            df_grp = df_res.groupby(['topics'])[metric].max().reset_index()
             fig.add_trace(
                 go.Scatter(
-                    x=df.topics,
-                    y=df.coherence,
+                    x=df_grp['topics'],
+                    y=df_grp[metric],
                     mode='lines+markers',
-                    name=str(level)
+                    name=metric
                 )
             )
         fig.update_layout(
@@ -412,6 +432,17 @@ class LDATopicModeling():
             yaxis_title="Likekihood")
         return fig
     
+    def dashboard(self):
+        fig = make_subplots(
+            rows=1, cols=2, specs=[[{"type": "scatter"}, {"type": "scatter"}]]
+        )
+
+        # fig.add_trace(self.plot_tsne(2), 1, 1)
+        fig.add_trace(self.plot_coherence(), 1, 1)
+        fig.add_trace(self.plot_likelihood(), 1, 2)
+
+        return fig
+
 
 # LDA Topic Modeling by decade
 class LDAPipeline():

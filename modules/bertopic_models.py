@@ -17,7 +17,7 @@ def save_bertopic_model(model, filename = 'bertopic_', model_dir = "/kaggle/work
     model.save(model_dir + '/' + filename + now.strftime("%d%m%Y_%H%M%S"))
 
 
-def compute_coherence(topic_model, filtered_text, topics):
+def compute_coherence(topic_model, filtered_text, topics, metric = 'c_v'):
     documents = pd.DataFrame({"Document": filtered_text,
                             "ID": range(len(filtered_text)),
                             "Topic": topics})

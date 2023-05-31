@@ -295,7 +295,7 @@ class SparkSPreprocessor():
         # add decade column 
         #self.__df.withColumn("decade", decade(self.__df.year)) # already added
         
-        if (sample_by != 'decade') or (sample_by != 'ddecade'):
+        if (sample_by != 'decade') and (sample_by != 'ddecade'):
             raise Exception('{} isn\'t recognize as an existing column name'.format(sample_by))
                         
         # compute decade frequency

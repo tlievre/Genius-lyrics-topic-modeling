@@ -39,7 +39,7 @@ def barplot_by_decades(df, group_by = 'decade'):
     fig.update_layout(
             title = "Music release over years",
             xaxis_title=group_by
-                if decade == 'decade' else 'double decade',
+                if decade == group_by else 'double decade',
             yaxis_title="release")
     return fig
 
@@ -193,6 +193,7 @@ def words_decades(df, decades, group_by = 'decade'):
                     y=np.log(df_d[df_d['tag'] == tag]['unique_words']),
                     name=tag,
                     boxpoints='all',
+                    marker=dict(color=[color i in range(0, len(tags)])
                     customdata=np.stack(
                         (df_d[df_d['tag'] == tag]['title'],
                         df_d[df_d['tag'] == tag]['artist']),

@@ -327,7 +327,8 @@ class LDATopicModeling():
                 hovertemplate = 
                     "title: %{customdata[0]}<br>" +
                     "artist: %{customdata[1]}<br>" +
-                    "x: %{x}" + "y: %{y}"
+                    "x: %{x}" + "y: %{y}",
+                showlegend=False
             )
             fig.update_layout(
                 title = "t-SNE 2d Clustering of {} LDA Topics ({})" \
@@ -387,7 +388,8 @@ class LDATopicModeling():
                 hovertemplate = 
                     "title: %{customdata[0]}<br>" +
                     "artist: %{customdata[1]}<br>" +
-                    "x: %{x}" + "y: %{y}" + "z: %{z}"
+                    "x: %{x}" + "y: %{y}" + "z: %{z}",
+                showlegend=False
             )
             fig.update_layout(
                 title = "t-SNE 3d Clustering of {} LDA Topics ({})" \

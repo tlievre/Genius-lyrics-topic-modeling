@@ -4,29 +4,33 @@ import numpy as np
 from plotly.subplots import make_subplots
 
 # barplot by decade
-def barplot_by_decade(df):
-    """display decade frequency
+def barplot_by_decades(df, group_by = 'decade'):
+    """display decade frequency by decade or double decade
 
     Args:
         df (obj): pandas object
+        group_by (str): decade or ddecade are accepted values.
 
     Returns:
         obj: plotly object
     """
+    
+    if (group_by != 'decade') and (group_by != 'ddecade'):
+        raise Exception('{} isn\'t recognize as an existing column name'.format(group_by))
 
     # groupby decade
-    df_d = df.groupby(['decade']).size().reset_index(name='count')
+    df_d = df.groupby([group_by]).size().reset_index(name='count')
 
     # create the figure
     fig = go.Figure()
 
     fig.add_bar(
-        x=df_d.decade,
+        x=df_d[group_by],
         y=df_d['count'],
         showlegend=False)
 
     fig.add_scatter(
-            x=df_d.decade,
+            x=df_d[group_by],
             y=df_d["count"],
             mode="markers+lines",
             name="trend",
@@ -34,25 +38,29 @@ def barplot_by_decade(df):
 
     fig.update_layout(
             title = "Music release over years",
-            xaxis_title="decade",
+            xaxis_title=group_by
+                if decade == 'decade' else 'double decade',
             yaxis_title="release")
     return fig
 
 
 
-def piechart_tags_decade(df):
-    """display piechart tags
+def piechart_tags_decades(df, group_by = 'decade'):
+    """display piechart tags by decade or double decade
 
     Args:
         df (pandas.Dataframe): pandas object.
+        group_by (str): decade or ddecade are accepted values.
 
     Returns:
         obj: plolty.figure object
     """
+    if (group_by != 'decade') and (group_by != 'ddecade'):
+        raise Exception('{} isn\'t recognize as an existing column name'.format(group_by))
 
     # compute tag frequencies by decade
-    df_pies_d = df.groupby(['decade','tag']).size().reset_index(name='count')
-    df_pies_d[df_pies_d.decade == 1960]
+    df_pies_d = df.groupby([group_by,'tag']).size().reset_index(name='count')
+    #df_pies_d[df_pies_d.decade == 1960]
 
     # create en make subplot
     fig = make_subplots(rows=3, cols=3,
@@ -60,12 +68,12 @@ def piechart_tags_decade(df):
                             [{'type':'domain'}
                             for i in range(1,4)] for i in range(1,4)
                         ])
-    decades = df_pies_d.decade.unique().tolist()
+    decades = df_pies_d[group_by].unique().tolist()
     for i in range(0,3):
         for k in range(0,3):
             decade = decades[i*3 + k]
             # group by decade
-            df_p = df_pies_d[df_pies_d.decade == decade]
+            df_p = df_pies_d[df_pies_d[group_by] == decade]
             # add figure
             fig.add_trace(go.Pie(labels=df_p.tag, values=df_p['count'], name=decade), i+1, k+1)
             # add annotation
@@ -89,23 +97,27 @@ def piechart_tags_decade(df):
     return fig
 
 
-def top_artists_decades(df, decades, rows = 2, cols = 2,
-                        n_artists = 5, plotly_color = 'Plasma'):
+def top_artists_decades(df, decades, rows = 2, cols = 2, group_by = 'decade',
+                        n_artists = 5, plotly_color = 'Plasma',):
     """multi Bar chart figure represent top artist views by decade
 
     Args:
         df (pandas.Dataframe): data
-        decades (list): list of decades
+        decades (list): list of decades or double decade
         rows (int, optional): subplot row number. Defaults to 2.
         cols (int, optional): subplot col number. Defaults to 2.
         n_artists (int, optional): showing number of top artists. Defaults to 5.
         plotly_color (str, optional): color plotly. Defaults to 'Plasma'.
+        group_by (str): decade or ddecade are accepted values.
 
     Returns:
         obj: plotly.figure object
     """
+    
+    if (group_by != 'decade') and (group_by != 'ddecade'):
+        raise Exception('{} isn\'t recognize as an existing column name'.format(group_by))
 
-    views_serie = df.groupby(['decade','artist'])['views'] \
+    views_serie = df.groupby([group_by,'artist'])['views'] \
             .sum().sort_values(ascending=False)
 
     # create en make subplot
@@ -144,7 +156,19 @@ def top_artists_decades(df, decades, rows = 2, cols = 2,
     return fig
 
 
-def words_decades(df, decades):
+def words_decades(df, decades, group_by = 'decade'):
+    """display decade frequency by decade or double decade
+
+    Args:
+        df (obj): pandas object
+        group_by (str): decade or ddecade are accepted values.
+
+    Returns:
+        obj: plotly object
+    """
+    
+    if (group_by != 'decade') and (group_by != 'ddecade'):
+        raise Exception('{} isn\'t recognize as an existing column name'.format(group_by))
 
     # create en make subplot
     fig = make_subplots(rows=1, cols=len(decades),
@@ -156,7 +180,7 @@ def words_decades(df, decades):
     for i, decade in enumerate(decades):
 
         # get df by decade
-        df_d = df[df["decade"] == decade]
+        df_d = df[df[group_by] == decade]
 
         # get unique tag of the decade
         tags = df_d['tag'].unique().tolist()

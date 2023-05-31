@@ -2,6 +2,8 @@ import plotly.graph_objects as go
 import numpy as np
 
 from plotly.subplots import make_subplots
+import plotly.express as px
+
 
 # barplot by decade
 def barplot_by_decades(df, group_by = 'decade'):
@@ -39,13 +41,13 @@ def barplot_by_decades(df, group_by = 'decade'):
     fig.update_layout(
             title = "Music release over years",
             xaxis_title=group_by
-                if decade == group_by else 'double decade',
+                if group_by == 'decade' else 'double decade',
             yaxis_title="release")
     return fig
 
 
 
-def piechart_tags_decades(df, group_by = 'decade'):
+def piechart_tags_decades(df, rows=3, cols=3,group_by = 'decade'):
     """display piechart tags by decade or double decade
 
     Args:
@@ -63,15 +65,15 @@ def piechart_tags_decades(df, group_by = 'decade'):
     #df_pies_d[df_pies_d.decade == 1960]
 
     # create en make subplot
-    fig = make_subplots(rows=3, cols=3,
+    fig = make_subplots(rows=rows, cols=cols,
                         specs=[
                             [{'type':'domain'}
-                            for i in range(1,4)] for i in range(1,4)
+                            for i in range(1,cols+1)] for i in range(1,rows+1)
                         ])
     decades = df_pies_d[group_by].unique().tolist()
-    for i in range(0,3):
-        for k in range(0,3):
-            decade = decades[i*3 + k]
+    for i in range(0,rows):
+        for k in range(0,cols):
+            decade = decades[i*rows + k]
             # group by decade
             df_p = df_pies_d[df_pies_d[group_by] == decade]
             # add figure
@@ -81,7 +83,7 @@ def piechart_tags_decades(df, group_by = 'decade'):
                 text=decade, x=k*0.375 + 0.125,
                 y=-i*0.3927 + 0.90, font_size=10,
                 showarrow=False))
-            if (i*3 + k) == 6:
+            if (i*rows + k) == (rows+cols):
                 break
 
 
@@ -170,6 +172,9 @@ def words_decades(df, decades, group_by = 'decade'):
     if (group_by != 'decade') and (group_by != 'ddecade'):
         raise Exception('{} isn\'t recognize as an existing column name'.format(group_by))
 
+    # set customize plotly color chart
+    colors = px.colors.qualitative.Plotly
+
     # create en make subplot
     fig = make_subplots(rows=1, cols=len(decades),
             x_title="tags",
@@ -186,14 +191,14 @@ def words_decades(df, decades, group_by = 'decade'):
         tags = df_d['tag'].unique().tolist()
         tags.sort() # sort tags list
 
-        for tag in tags:
+        for k, tag in enumerate(tags):
 
             fig.add_trace(
                 go.Box(
                     y=np.log(df_d[df_d['tag'] == tag]['unique_words']),
                     name=tag,
                     boxpoints='all',
-                    marker=dict(color=[color i in range(0, len(tags))])
+                    marker=dict(color=colors[k]),
                     customdata=np.stack(
                         (df_d[df_d['tag'] == tag]['title'],
                         df_d[df_d['tag'] == tag]['artist']),
@@ -203,6 +208,7 @@ def words_decades(df, decades, group_by = 'decade'):
                     "title: %{customdata[0]}<br>" +
                     "artist: %{customdata[1]}<br>" +
                     "log(words): %{y}",
+                    showlegend=False
                 ), 
                 1, i+1
             )

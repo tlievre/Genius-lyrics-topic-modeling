@@ -47,7 +47,8 @@ def barplot_by_decades(df, group_by = 'decade'):
 
 
 
-def piechart_tags_decades(df, rows=3, cols=3,group_by = 'decade'):
+def piechart_tags_decades(df, rows=3, cols=3,group_by = 'decade',
+                          titles = ['1960-1979', '1980-1999', '2000-2019']):
     """display piechart tags by decade or double decade
 
     Args:
@@ -69,7 +70,7 @@ def piechart_tags_decades(df, rows=3, cols=3,group_by = 'decade'):
                         specs=[
                             [{'type':'domain'}
                             for i in range(1,cols+1)] for i in range(1,rows+1)
-                        ])
+                        ], subplot_titles=titles)
     decades = df_pies_d[group_by].unique().tolist()
     for i in range(0,rows):
         for k in range(0,cols):
@@ -78,11 +79,6 @@ def piechart_tags_decades(df, rows=3, cols=3,group_by = 'decade'):
             df_p = df_pies_d[df_pies_d[group_by] == decade]
             # add figure
             fig.add_trace(go.Pie(labels=df_p.tag, values=df_p['count'], name=decade), i+1, k+1)
-            # add annotation
-            fig.add_annotation(arg=dict(
-                text=decade, x=k*0.375 + 0.125,
-                y=-i*0.3927 + 0.90, font_size=10,
-                showarrow=False))
             if (i*rows + k) == (rows+cols):
                 break
 
@@ -100,7 +96,8 @@ def piechart_tags_decades(df, rows=3, cols=3,group_by = 'decade'):
 
 
 def top_artists_decades(df, decades, rows = 2, cols = 2, group_by = 'decade',
-                        n_artists = 5, plotly_color = 'Plasma',):
+                        n_artists = 5, plotly_color = 'Plasma',
+                        titles = ['1960-1979', '1980-1999', '2000-2019']):
     """multi Bar chart figure represent top artist views by decade
 
     Args:
@@ -126,7 +123,7 @@ def top_artists_decades(df, decades, rows = 2, cols = 2, group_by = 'decade',
     fig = make_subplots(rows=rows, cols=cols,
                         x_title = 'number of occurrences',
                         y_title = 'views',
-                        subplot_titles = decades)
+                        subplot_titles = titles)
 
     for i in range(0,rows):
         for k in range(0,cols):
@@ -158,7 +155,8 @@ def top_artists_decades(df, decades, rows = 2, cols = 2, group_by = 'decade',
     return fig
 
 
-def words_decades(df, decades, group_by = 'decade'):
+def words_decades(df, decades, group_by = 'decade',
+                  titles = ['1960-1979', '1980-1999', '2000-2019']):
     """display decade frequency by decade or double decade
 
     Args:
@@ -179,7 +177,7 @@ def words_decades(df, decades, group_by = 'decade'):
     fig = make_subplots(rows=1, cols=len(decades),
             x_title="tags",
             y_title="log(unique words)",
-            subplot_titles = decades
+            subplot_titles = titles
     )
 
     for i, decade in enumerate(decades):
@@ -197,7 +195,7 @@ def words_decades(df, decades, group_by = 'decade'):
                 go.Box(
                     y=np.log(df_d[df_d['tag'] == tag]['unique_words']),
                     name=tag,
-                    boxpoints='all',
+                    boxpoints='outliers',
                     marker=dict(color=colors[k]),
                     customdata=np.stack(
                         (df_d[df_d['tag'] == tag]['title'],

@@ -310,7 +310,7 @@ class LDATopicModeling():
                                      'topic': topic_num,
                                      'artist': self.__meta_data['artist'],
                                      'title': self.__meta_data['title']})
-            sample_text = tsne_rep.sample(frac=0.025)
+            sample_text = tsne_rep.sample(frac=0.001)
             # create figure
             fig = go.Figure()
             # create a topic list
@@ -346,6 +346,7 @@ class LDATopicModeling():
                         sample_text['artist']),
                         axis=-1
                 ),
+                textposition="bottom center",
                 hovertemplate = 
                     "title: %{customdata[0]}<br>" +
                     "artist: %{customdata[1]}<br>" +
@@ -369,7 +370,7 @@ class LDATopicModeling():
                                      'topic': topic_num,
                                      'artist': self.__meta_data['artist'],
                                      'title': self.__meta_data['title']})
-            sample_text = tsne_rep.sample(frac=0.025)
+            sample_text = tsne_rep.sample(frac=0.001)
             # create figure
             fig = go.Figure()
             # create a topic list
@@ -434,14 +435,26 @@ class LDATopicModeling():
             yaxis_title="Likekihood")
         return fig
     
-    def dashboard(self):
+    def dashboard(self, w=1000, h=1200):
         fig = make_subplots(
-            rows=1, cols=2, specs=[[{"type": "scatter"}, {"type": "scatter"}]]
+            rows=2, cols=2,
+            specs=[[{"colspan": 2}, None], [{}, {}]],
+           subplot_titles=['tsne 2d', 'coherence scores (c_v, u_mass)', 'likelihood'],
         )
+        fig_list = [self.plot_tsne(2).data,
+                    self.plot_coherence().data,
+                    self.plot_likelihood().data]
 
-        # fig.add_trace(self.plot_tsne(2), 1, 1)
-        fig.add_trace(self.plot_coherence(), 1, 1)
-        fig.add_trace(self.plot_likelihood(), 1, 2)
+        for i in fig_list[0]:
+            fig.add_trace(i, 1, 1)        
+    
+        for i in fig_list[1]:
+            fig.add_trace(i, 2, 1)
+
+        for i in fig_list[2]:
+            fig.add_trace(i, 2, 2)
+        fig.update_layout(width=w,
+                height=h)
 
         return fig
 

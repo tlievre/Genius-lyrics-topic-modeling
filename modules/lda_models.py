@@ -53,6 +53,7 @@ class LDATopicModeling():
                  existing = False,
                  n_topics = 10,
                  worker_nodes = None,
+                 chunks = 10000,
                 grid_search = False,
                 epochs = 30,
                 metric = 'c_v'):
@@ -83,7 +84,8 @@ class LDATopicModeling():
                 id2word=self.__id2word,
                 num_topics=n_topics,
                 workers=worker_nodes,
-                passes=epochs)
+                passes=epochs,
+                chunksize=chunks)
             self.__likelihood = parse_logfile(gensim_log)
             self.__n_topics = n_topics
             self.__cv_results = None

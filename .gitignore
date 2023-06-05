@@ -1,5 +1,6 @@
-__pycache__/
+**/__pycache__/
 song_lyrics.csv
 data/
 models/
 .ipynb_checkpoints/
+gensim.log

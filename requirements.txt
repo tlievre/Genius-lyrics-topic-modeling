@@ -4,6 +4,9 @@ pandas
 pyldavis
 scikit-learn
 spacy
-top2vec
 plotly
 jupyter
+pyarrow
+bertopic
+pyspark
+statsmodels

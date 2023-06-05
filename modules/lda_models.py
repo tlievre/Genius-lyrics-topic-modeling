@@ -56,7 +56,8 @@ class LDATopicModeling():
                  chunks = 10000,
                 grid_search = False,
                 epochs = 30,
-                metric = 'c_v'):
+                metric = 'c_v',
+                eval_every = 2):
         
         # filter metric
         if (metric != 'c_v') and (metric != 'u_mass'):
@@ -85,7 +86,8 @@ class LDATopicModeling():
                 num_topics=n_topics,
                 workers=worker_nodes,
                 passes=epochs,
-                chunksize=chunks)
+                chunksize=chunks,
+                eval_every = eval_every)
             self.__likelihood = parse_logfile(gensim_log)
             self.__n_topics = n_topics
             self.__cv_results = None
@@ -132,7 +134,9 @@ class LDATopicModeling():
                     workers=worker_nodes,
                     passes=epochs,
                     alpha=param['alpha'],
-                    eta=param['eta'])
+                    eta=param['eta'],
+                    eval_every = eval_every,
+                    chunksize=chunks)
                 
                 # track likelihood
                 likelihood = parse_logfile(gensim_log)
@@ -310,7 +314,7 @@ class LDATopicModeling():
                                      'topic': topic_num,
                                      'artist': self.__meta_data['artist'],
                                      'title': self.__meta_data['title']})
-            sample_text = tsne_rep.sample(frac=0.001)
+            sample_text = tsne_rep.sample(frac=0.01)
             # create figure
             fig = go.Figure()
             # create a topic list
@@ -428,7 +432,7 @@ class LDATopicModeling():
         fig = go.Figure(
             go.Scatter(x=[i for i in range(0,upper_bound)], y=self.__likelihood[-upper_bound:],
                        mode='lines',
-                       name='lines'))
+                       name='likelihood'))
         fig.update_layout(
             title = "Likelihood over passes",
             xaxis_title="passes",
@@ -437,25 +441,31 @@ class LDATopicModeling():
     
     def dashboard(self, w=1000, h=1200):
         fig = make_subplots(
-            rows=2, cols=2,
-            specs=[[{"colspan": 2}, None], [{}, {}]],
-           subplot_titles=['tsne 2d', 'coherence scores (c_v, u_mass)', 'likelihood'],
+            rows=3, cols=2,
+            specs=[[{"colspan": 2}, None],
+                   [{}, {"rowspan": 2}],
+                   [{}, None]],
+           subplot_titles=['tsne 2d', 'coherence scores (c_v)', 'likelihood','coherence scores (u_mass)'],
+           row_heights=[0.7, 0.15, 0.15],
+           horizontal_spacing = 0.05,
+           vertical_spacing = 0.05
         )
         fig_list = [self.plot_tsne(2).data,
                     self.plot_coherence().data,
-                    self.plot_likelihood().data]
+                    self.plot_likelihood(30).data]
 
         for i in fig_list[0]:
             fig.add_trace(i, 1, 1)        
     
-        for i in fig_list[1]:
-            fig.add_trace(i, 2, 1)
+        fig.add_trace(fig_list[1][0], 2, 1)
+        fig.add_trace(fig_list[1][1], 3, 1)
+
 
         for i in fig_list[2]:
             fig.add_trace(i, 2, 2)
-        fig.update_layout(width=w,
-                height=h)
 
+        fig.update_layout(width =w, height =h )
+    
         return fig
 
 

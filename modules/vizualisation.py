@@ -195,7 +195,7 @@ def words_decades(df, decades, group_by = 'decade',
                 go.Box(
                     y=np.log(df_d[df_d['tag'] == tag]['unique_words']),
                     name=tag,
-                    boxpoints='outliers',
+                    boxpoints='all',
                     marker=dict(color=colors[k]),
                     customdata=np.stack(
                         (df_d[df_d['tag'] == tag]['title'],

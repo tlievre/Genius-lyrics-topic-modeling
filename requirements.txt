@@ -9,3 +9,4 @@ jupyter
 pyarrow
 bertopic
 pyspark
+statsmodels
